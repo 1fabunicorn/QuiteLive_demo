@@ -17,6 +17,7 @@ class API:
         self.docker_ip_offset = 0
         self.mine_n_seconds = 10  # 10 second block time
         self.last_mine = datetime.datetime.now()
+        self.chain = None
         create_nodes = True
         if create_nodes:
             self.create_nodes(self.node_count, self.docker_ip_offset)
@@ -82,3 +83,13 @@ class API:
         mt.make_tree()
         mt.get_merkle_root()
         return " ".join(recite(mt.get_merkle_root()))
+
+    def hash_in_tx_ID(self, tx_id, merkle_root):
+        if self.chain is None:
+            self.chain = requests.get("{}/chain".format(self.node_ips[0])).json()
+        for block in self.chain['chain']:
+            for transaction in block["transactions"]:
+                if transaction["tx_id"] == tx_id:
+                    added_data = json.loads(transaction["added_data"])
+                    return added_data["merkle_root"] == merkle_root
+        return False

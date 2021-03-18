@@ -11,7 +11,7 @@ import cv2
 import src.start_video as sv
 import src.Blockchain.api as blockchain_api
 from src.FrameHash import FrameHash
-from src.verify import verify
+from src.verify import get_merkle_roots_from_video, check_txs, merkle_root_from_tx_ids
 from src.add_metadata import add_metadata
 from src.assets.recording_gif_base64 import recording_gif
 
@@ -34,7 +34,7 @@ def main():
     sg.theme('Material1')
     # define the window layout
     layout = [[sg.Image(filename='src/assets/Demo_welcome.png', key='image')],
-              [sg.Text('', key="_RECITE_TEXT_BOX_", font='Ubuntu 14', size=(50, 2))],
+              [sg.Text('', key="_RECITE_TEXT_BOX_", font='Ubuntu 14', size=(50, 4))],
               [sg.Submit('Record', size=(10, 1), font='Ubuntu 14'),
                sg.Button('Exit', size=(10, 1), font='Ubuntu 14'),
                sg.Image(data=recording_gif, visible=False, key='_IMAGE_'), ],
@@ -76,7 +76,7 @@ def main():
             window['Record'].update(disabled=True)
             window['Verify'].update(disabled=True)
             print("video merkle root")
-            video_file = verify(values["-IN-"])
+            video_file = get_merkle_roots_from_video(values["-IN-"])
 
             with open('out/metadata.json') as json_file:
                 metadata = json.load(json_file)
@@ -88,7 +88,10 @@ def main():
                     else:
                         print("hash does not match: {} != {}".format(merkle_root['merkle_root'],
                                                                      video_file[i]['merkle_root']))
-            result = "{} out of {} hashes correct".format(matches, len(metadata["merkle_roots"]))
+            tx_check = check_txs(bc_api, metadata)
+            hashes_correct = "{} out of {} hashes correct".format(matches, len(metadata["merkle_roots"]))
+            wordlist = merkle_root_from_tx_ids(metadata)
+            result = "{}\n{}\n{}".format(hashes_correct, tx_check, wordlist)
             window.Element("_RECITE_TEXT_BOX_").update(result)
 
         if recording:

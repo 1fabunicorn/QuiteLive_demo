@@ -54,7 +54,7 @@ class FrameHash:
         new_merkle_root = {
             "frame_count": len(last_hashes),
             "merkle_root": mt.get_merkle_root(),
-            "hash": self.get_last_hashes()
+            # "hash": self.get_last_hashes()
         }
         self.merkle_roots.append(new_merkle_root)
         return new_merkle_root
