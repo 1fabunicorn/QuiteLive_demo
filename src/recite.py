@@ -21,5 +21,3 @@ def recite(merkle_root):
         chunk_to_hex = int("0x{}".format(chunk), 16)
         words.append(wordlist[chunk_to_hex % len(wordlist)])
     return words
-
-

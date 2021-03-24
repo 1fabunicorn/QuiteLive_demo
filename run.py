@@ -34,12 +34,12 @@ def main():
     sg.theme('Material1')
     # define the window layout
     layout = [[sg.Image(filename='src/assets/Demo_welcome.png', key='image')],
-              [sg.Text('', key="_RECITE_TEXT_BOX_", font='Ubuntu 14', size=(50, 4))],
+              [sg.Text('', key="_RECITE_TEXT_BOX_", font='Ubuntu 40', size=(50, 4))],
               [sg.Submit('Record', size=(10, 1), font='Ubuntu 14'),
                sg.Button('Exit', size=(10, 1), font='Ubuntu 14'),
                sg.Image(data=recording_gif, visible=False, key='_IMAGE_'), ],
               [sg.Text('Select video file', size=(14, 1), font='Ubuntu 12'),
-               sg.FileBrowse(key="-IN-", file_types=(("mp4 video files", "*.mp4"),), size=(10, 1), font='Ubuntu 14'),
+               sg.FileBrowse(key="-IN-", file_types=(("mp4 files", "*.mp4"), ("mov files", "*.mov"), ("avi files", "*.avi")), size=(10, 1), font='Ubuntu 14'),
                sg.Submit('Verify', size=(10, 1), font='Ubuntu 14')], ]
 
     # create the window and show it without the plot
@@ -49,8 +49,8 @@ def main():
     cap = cv2.VideoCapture(0)
     recording = False
     last_t = 0
-    record_duration = 60
-    recite_time = 15
+    record_duration = 25
+    recite_time = 10
     reciting = False
     while True:
         event, values = window.read(timeout=5)
@@ -66,16 +66,15 @@ def main():
             last_t = dt.datetime.now()
             end_t = last_t + dt.timedelta(0, record_duration)
             verify_t = end_t - dt.timedelta(0, recite_time)
-            fh = FrameHash("out/out.md5")
             recording = True
             window.Element('_IMAGE_').update(visible=True)
             window['Record'].update(disabled=True)
             window['Verify'].update(disabled=True)
+            fh = FrameHash("out/out.md5")
 
         elif event == 'Verify':
             window['Record'].update(disabled=True)
             window['Verify'].update(disabled=True)
-            print("video merkle root")
             video_file = get_merkle_roots_from_video(values["-IN-"])
 
             with open('out/metadata.json') as json_file:

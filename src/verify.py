@@ -13,15 +13,18 @@ def _framehash(video_file):
     if os.path.exists("out/out1.md5"):
         os.remove("out/out1.md5")
     command = shlex.split("""
-    ffmpeg -hide_banner -fflags +genpts \
+    ffmpeg -hide_banner -hwaccel auto\
+    -r 30
     -i {} \
     -c copy \
+    -copytb 0 \
+    -r 30 \
     -f framehash out/out1.md5
     """.format(video_file))
     subprocess.Popen(command)
 
 
-def _extract_frame_counts(metadata):
+def _extract_frame_offsets(metadata):
     offsets = []
     for root in metadata['merkle_roots']:
         offsets.append(root['frame_count'])
@@ -31,10 +34,15 @@ def _extract_frame_counts(metadata):
 def _get_hashes(offsets, hashes):
     hashes = collections.deque(hashes)
     offset_hashes = []
+    last = 0
     for i in offsets:
         temp = []
-        for j in range(i):
-            temp.append(hashes.popleft())
+        for j in range(i - last):
+            try:
+                temp.append(hashes.popleft())
+            except IndexError:
+                raise IndexError("Error: no more hashes to dequeue")
+        last = i
         offset_hashes.append(temp)
     return offset_hashes
 
@@ -54,7 +62,6 @@ def merkle_root_from_tx_ids(metadata):
     mt = merkletools.MerkleTools()  # default is sha256
     mt.add_leaf(tx_ids)
     mt.make_tree()
-
     mt.get_merkle_root()
     return " ".join(recite(mt.get_merkle_root()))
 
@@ -64,7 +71,7 @@ def get_merkle_roots_from_video(video_file):
     fh = FrameHash(path="out/out1.md5")
     with open('out/metadata.json') as json_file:
         metadata = json.load(json_file)
-    offsets = _extract_frame_counts(metadata)
+    offsets = _extract_frame_offsets(metadata)
     offsetted_hashes = _get_hashes(offsets, fh.get_hashes()[0])  # only one element in list, get the first one
     mt = merkletools.MerkleTools()  # default is sha256
     merkle_roots = []
